@@ -38,6 +38,8 @@ Usage: $(basename "$0") <options>
         --skip-upload             Skip package upload, just create the release. Not needed in case of OCI upload.
     -l, --mark-as-latest          Mark the created GitHub release as 'latest' (default: true)
         --packages-with-index     Upload chart packages directly into publishing branch
+        --generate-release-notes  Source notes from --release-notes-file, if present, else auto-generate
+        --release-notes-file      Changelog for generated release notes
 EOF
 }
 
@@ -55,6 +57,8 @@ main() {
   local mark_as_latest=true
   local packages_with_index=false
   local pages_branch=
+  local generate_release_notes=false
+  local release_notes_file=
 
   parse_command_line "$@"
 
@@ -218,6 +222,16 @@ parse_command_line() {
         shift
       fi
       ;;
+    --generate-release-notes)
+      generate_release_notes="true"
+      shift
+      ;;
+    --release-notes-file)
+      if [[ -n "${2:-}" ]]; then
+        release_notes_file="$2"
+        shift
+      fi
+      ;;
     *)
       break
       ;;
@@ -329,6 +343,12 @@ release_charts() {
   fi
   if [[ -n "$pages_branch" ]]; then
     args+=(--pages-branch "$pages_branch")
+  fi
+  if [[ "$generate_release_notes" = true ]]; then
+    args+=(--generate-release-notes)
+    if [[ -n "$release_notes_file" ]]; then
+      args+=(--release-notes-file "$release_notes_file")
+    fi
   fi
 
   echo 'Releasing charts...'
